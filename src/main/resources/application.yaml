@@ -1,6 +1,15 @@
 spring:
   application:
     name: dingzi-ai-agent
+  profiles:
+    active: local
+  ai:
+    dashscope:
+      api-key: your-api-key
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+          model: qwen-max
 server:
   port: 8100
   servlet:
