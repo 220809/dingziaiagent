@@ -16,8 +16,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 文件对话记忆持久化
+ */
 @Slf4j
-public class JsonFileChatMemory implements ChatMemory {
+public class KryoFileChatMemory implements ChatMemory {
     private final File BASE_DIR;
 
     private static final Kryo kryo = new Kryo();
@@ -28,7 +31,7 @@ public class JsonFileChatMemory implements ChatMemory {
         kryo.register(AssistantMessage.class);
     }
 
-    public JsonFileChatMemory(String filePath) {
+    public KryoFileChatMemory(String filePath) {
         this.BASE_DIR = new File(filePath);
         if (!BASE_DIR.exists())
         {
@@ -56,10 +59,20 @@ public class JsonFileChatMemory implements ChatMemory {
         }
     }
 
+    /**
+     * 获取本地对话记忆文件
+     * @param chatId 对话 id
+     * @return File
+     */
     private File getMemoryFile(String chatId) {
         return new File(BASE_DIR.toString(), chatId + ".kryo");
     }
 
+    /**
+     * 读取本地对话记忆文件
+     * @param chatId 对话 id
+     * @return 消息列表
+     */
     private List<Message> getOrCreateMemoryFile(String chatId) {
         File memoryFile = getMemoryFile(chatId);
         List<Message> messages = new ArrayList<>();
@@ -75,6 +88,11 @@ public class JsonFileChatMemory implements ChatMemory {
         return messages;
     }
 
+    /**
+     * 保存对话记忆到文件
+     * @param chatId 对话id
+     * @param messages 消息
+     */
     private void storeMemoryFile(String chatId, List<Message> messages) {
         File memoryFile = getMemoryFile(chatId);
 

@@ -1,7 +1,6 @@
 package com.dingzk.dingziaiagent.app;
 
 import com.dingzk.dingziaiagent.advisor.LiZhiLoggerAdvisor;
-import com.dingzk.dingziaiagent.chatmemory.JsonFileChatMemory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -33,18 +32,16 @@ public class LiZhiApp {
 
     private final BeanOutputConverter<StructuredReport> beanOutputConverter;
 
-    public LiZhiApp(ChatModel dashScopeChatModel) {
+    public LiZhiApp(ChatModel dashScopeChatModel, ChatMemory mySqlChatMemory) {
         this.chatModel = dashScopeChatModel;
         beanOutputConverter = new BeanOutputConverter<>(StructuredReport.class);
 
-        // 创建内存 ChatMemory
-        ChatMemory chatMemory = new JsonFileChatMemory(System.getProperty("user.dir") + "/tmp/chat-memory");
-
+        // 使用 MySQL 持久化对话记忆
         chatClient = ChatClient.builder(dashScopeChatModel)
                 // 系统 Prompt
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        MessageChatMemoryAdvisor.builder(mySqlChatMemory).build()
                         , new LiZhiLoggerAdvisor()   // 日志记录 Advisor
 //                        , new ReReadingAdvisor()     // Re2 Advisor
                 )
