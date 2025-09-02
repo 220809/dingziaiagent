@@ -47,4 +47,16 @@ class LiZhiAppTest {
         LiZhiApp.StructuredReport report = liZhiApp.doStructuredChatUsingModel(message, chatId);
         Assertions.assertNotNull(report);
     }
+
+    @Test
+    void testSensitiveWordsAdvisor() {
+        String chatId = UUID.randomUUID().toString();
+        // 违禁词
+        String message = "你好，我是恐怖";
+        liZhiApp.doChat(message, chatId);
+
+        // 非违禁词
+        message = "你好，我是恐布";
+        liZhiApp.doChat(message, chatId);
+    }
 }
