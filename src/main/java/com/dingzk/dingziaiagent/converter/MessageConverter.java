@@ -6,12 +6,10 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.springframework.ai.chat.messages.*;
-import org.springframework.stereotype.Component;
 
 /**
  * Message、ChatMessage 转换类
  */
-@Component
 public class MessageConverter {
     private static final Kryo kryo = new Kryo();
 
@@ -26,10 +24,11 @@ public class MessageConverter {
      * @param conversationId 对话 id
      * @return ChatMessage
      */
-    public ChatMessage convertToChatMessage(Message message, String conversationId) {
+    public static ChatMessage convertToChatMessage(Message message, String conversationId) {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setMessageType(message.getMessageType().ordinal());
         chatMessage.setConversationId(conversationId);
+        chatMessage.setId(((Integer) message.getMetadata().get("chatMessageId")));
         try (Output output = new Output(1024)) {
             kryo.writeObject(output, message);
 
@@ -43,7 +42,7 @@ public class MessageConverter {
      * @param chatMessage ChatMessage
      * @return Message
      */
-    public Message convertToMessage(ChatMessage chatMessage) {
+    public static Message convertToMessage(ChatMessage chatMessage) {
         Class<? extends Message> messageClass = switch (chatMessage.getMessageType()) {
             case 0 -> UserMessage.class;
             case 1 -> AssistantMessage.class;
@@ -54,6 +53,7 @@ public class MessageConverter {
         Message message = null;
         try (Input input = new Input(chatMessage.getMessageContent())) {
             message = kryo.readObject(input, messageClass);
+            message.getMetadata().put("chatMessageId", chatMessage.getId());
         }
         return message;
     }

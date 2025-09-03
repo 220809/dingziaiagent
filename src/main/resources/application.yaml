@@ -32,3 +32,13 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+mybatis-plus:
+#  # SQL 日志调试
+#  configuration:
+#    map-underscore-to-camel-case: true
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-not-delete-value: 0
+      logic-delete-value: 1

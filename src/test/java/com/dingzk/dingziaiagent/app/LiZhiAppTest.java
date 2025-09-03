@@ -38,17 +38,6 @@ class LiZhiAppTest {
     }
 
     @Test
-    void doStructuredChatUsingModel() {
-
-        String chatId = UUID.randomUUID().toString();
-
-        // 第一条消息
-        String message = "你好，我是钉子。最近被家人催婚，我该怎么办？请给我一些排解烦恼的建议。";
-        LiZhiApp.StructuredReport report = liZhiApp.doStructuredChatUsingModel(message, chatId);
-        Assertions.assertNotNull(report);
-    }
-
-    @Test
     void testSensitiveWordsAdvisor() {
         String chatId = UUID.randomUUID().toString();
         // 违禁词

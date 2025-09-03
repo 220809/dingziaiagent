@@ -26,9 +26,6 @@ class ChatMessageMapperTest {
     @Resource
     private ChatMessageMapper chatMessageMapper;
 
-    @Resource
-    private MessageConverter messageConverter;
-
     private static final Kryo kryo = new Kryo();
 
     private static final UserMessage TEST_USER_MESSAGE = new UserMessage("hello");
@@ -49,10 +46,10 @@ class ChatMessageMapperTest {
     @BeforeEach
     void setTestChatMessageList() {
         TEST_CHAT_MESSAGE_LIST.clear();
-        TEST_CHAT_MESSAGE_LIST.add(messageConverter.convertToChatMessage(TEST_USER_MESSAGE, TEST_CONVERSATION_ID));
-        TEST_CHAT_MESSAGE_LIST.add(messageConverter.convertToChatMessage(TEST_ASSISTANT_MESSAGE, TEST_CONVERSATION_ID));
-        TEST_CHAT_MESSAGE_LIST.add(messageConverter.convertToChatMessage(TEST_SYSTEM_MESSAGE, TEST_CONVERSATION_ID));
-        TEST_CHAT_MESSAGE_LIST.add(messageConverter.convertToChatMessage(TEST_TOOL_RESPONSE_MESSAGE, TEST_CONVERSATION_ID));
+        TEST_CHAT_MESSAGE_LIST.add(MessageConverter.convertToChatMessage(TEST_USER_MESSAGE, TEST_CONVERSATION_ID));
+        TEST_CHAT_MESSAGE_LIST.add(MessageConverter.convertToChatMessage(TEST_ASSISTANT_MESSAGE, TEST_CONVERSATION_ID));
+        TEST_CHAT_MESSAGE_LIST.add(MessageConverter.convertToChatMessage(TEST_SYSTEM_MESSAGE, TEST_CONVERSATION_ID));
+        TEST_CHAT_MESSAGE_LIST.add(MessageConverter.convertToChatMessage(TEST_TOOL_RESPONSE_MESSAGE, TEST_CONVERSATION_ID));
     }
 
     @Test
@@ -68,7 +65,7 @@ class ChatMessageMapperTest {
         query.eq("conversation_id", TEST_CONVERSATION_ID);
         List<ChatMessage> chatMessages = chatMessageMapper.selectList(query);
 
-        List<Message> list = chatMessages.stream().map(messageConverter::convertToMessage).toList();
+        List<Message> list = chatMessages.stream().map(MessageConverter::convertToMessage).toList();
 
         for (Message m : list) {
             switch (m.getMessageType()) {

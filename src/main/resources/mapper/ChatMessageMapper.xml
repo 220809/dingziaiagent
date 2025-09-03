@@ -9,10 +9,17 @@
             <result property="conversationId" column="conversation_id" jdbcType="VARCHAR"/>
             <result property="messageType" column="message_type" jdbcType="TINYINT"/>
             <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+            <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
+            <result property="deleted" column="deleted" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,conversation_id,message_type,
-        created_time,message_content
+        created_time,updated_time,deleted,
+        message_content
     </sql>
+
+    <select id="findConversationIds" resultType="string">
+        SELECT COUNT(DISTINCT conversation_id) FROM chat_message WHERE deleted = 0;
+    </select>
 </mapper>

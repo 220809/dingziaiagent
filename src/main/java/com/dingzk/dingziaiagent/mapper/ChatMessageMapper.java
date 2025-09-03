@@ -3,6 +3,8 @@ package com.dingzk.dingziaiagent.mapper;
 import com.dingzk.dingziaiagent.model.ChatMessage;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
+import java.util.List;
+
 /**
 * @author ding
 * @description 针对表【chat_message(对话记忆消息)】的数据库操作Mapper
@@ -10,7 +12,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity com.dingzk.dingziaiagent.model.ChatMessage
 */
 public interface ChatMessageMapper extends BaseMapper<ChatMessage> {
-
+    List<String> findConversationIds();
 }
 
 
