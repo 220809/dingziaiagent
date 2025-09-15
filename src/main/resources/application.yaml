@@ -3,13 +3,37 @@ spring:
     name: dingzi-ai-agent
   profiles:
     active: local
+  datasource:
+    mysql:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url:
+      username:
+      password:
+    postgresql:
+      driver-class-name: org.postgresql.Driver
+      url:
+      username:
+      password:
+
+
   ai:
     dashscope:
       api-key: your-api-key
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
-          model: qwen-max
+          model: qwen-plus
+      embedding:
+        base-url: https://dashscope.aliyuncs.com
+        options:
+          model: text-embedding-v1
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+        initialize-schema: true
 server:
   port: 8100
   servlet:
@@ -33,10 +57,10 @@ knife4j:
   setting:
     language: zh_cn
 mybatis-plus:
+  configuration:
 #  # SQL 日志调试
-#  configuration:
-#    map-underscore-to-camel-case: true
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
       logic-delete-field: deleted

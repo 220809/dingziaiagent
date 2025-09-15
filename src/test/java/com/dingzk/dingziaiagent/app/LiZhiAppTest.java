@@ -48,4 +48,13 @@ class LiZhiAppTest {
         message = "你好，我是恐布";
         liZhiApp.doChat(message, chatId);
     }
+
+    @Test
+    void doRagChat() {
+        String chatId = UUID.randomUUID().toString();
+        String message = "我总是后悔当初没能好好学习，我该如何排解这种情绪？";
+
+        String content = liZhiApp.doRagChat(message, chatId);
+        Assertions.assertNotNull(content);
+    }
 }

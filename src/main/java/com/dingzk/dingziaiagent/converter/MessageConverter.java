@@ -29,7 +29,8 @@ public class MessageConverter {
         chatMessage.setMessageType(message.getMessageType().ordinal());
         chatMessage.setConversationId(conversationId);
         chatMessage.setId(((Integer) message.getMetadata().get("chatMessageId")));
-        try (Output output = new Output(1024)) {
+        // 消息体过大，缓冲区溢出问题
+        try (Output output = new Output(1024, -1)) {
             kryo.writeObject(output, message);
 
             chatMessage.setMessageContent(output.toBytes());

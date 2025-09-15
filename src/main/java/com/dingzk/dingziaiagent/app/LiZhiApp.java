@@ -3,13 +3,17 @@ package com.dingzk.dingziaiagent.app;
 import com.dingzk.dingziaiagent.advisor.LiZhiLoggerAdvisor;
 import com.dingzk.dingziaiagent.chatmemory.MySqlChatMemoryRepository;
 import com.dingzk.dingziaiagent.mapper.ChatMessageMapper;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,7 +28,16 @@ public class LiZhiApp {
             "需温和明确地回应：“听起来你的经历十分痛苦，这已经超出了我能帮助的范围，请立即联系专业的心理危机干预机构。”类似表述； " +
             "对话开头的最后自然融入：“我是AI励志师，旨在引导陪伴你；若有严重心理困扰，请线下寻求专业人士帮助。”类似表述。";
 
+    private MessageChatMemoryAdvisor chatMemoryAdvisor;
+
+    @Resource
+    private Advisor ragCloudDocumentAdvisor;
+
+    @Resource
+    private VectorStore pgVectorStore;
+
     public LiZhiApp(ChatModel dashScopeChatModel, ChatMessageMapper chatMessageMapper) {
+
         MySqlChatMemoryRepository mySqlChatMemoryRepository = MySqlChatMemoryRepository.builder()
                 .chatMessageMapper(chatMessageMapper)
                 .build();
@@ -33,14 +46,15 @@ public class LiZhiApp {
                 .chatMemoryRepository(mySqlChatMemoryRepository)
                 .maxMessages(3)
                 .build();
+        // 想要实现 MySQL 持久化对话记忆，添加此 Advisor
+        chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(mySqlChatMemory).build();
 
         // 使用 MySQL 持久化对话记忆
         chatClient = ChatClient.builder(dashScopeChatModel)
                 // 系统 Prompt
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
-                        MessageChatMemoryAdvisor.builder(mySqlChatMemory).build()
-                        , new LiZhiLoggerAdvisor()   // 日志记录 Advisor
+                        new LiZhiLoggerAdvisor()   // 日志记录 Advisor
 //                        , new ReReadingAdvisor()     // Re2 Advisor
 //                        , new SensitiveWordsAdvisor()  // 敏感词 Advisor
                 )
@@ -50,6 +64,7 @@ public class LiZhiApp {
     public String doChat(String message, String chatId) {
         ChatResponse chatResponse = chatClient.prompt()
                 .user(message)
+                .advisors(chatMemoryAdvisor)
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .call()
                 .chatResponse();
@@ -67,5 +82,24 @@ public class LiZhiApp {
                 .call()
                 .entity(StructuredReport.class);
         return report;
+    }
+
+
+    /**
+     * 知识库问答
+     * @param message 用户消息
+     * @param conversationId 对话Id
+     * @return 大模型返回内容
+     */
+    public String doRagChat(String message, String conversationId) {
+        ChatResponse chatResponse = chatClient.prompt()
+                .user(message)
+//                .advisors(ragCloudDocumentAdvisor)   // 云知识库文档检索
+                .advisors(new QuestionAnswerAdvisor(pgVectorStore))   // 向量数据库文档检索
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .call()
+                .chatResponse();
+        String content = chatResponse.getResult().getOutput().getText();
+        return content;
     }
 }
