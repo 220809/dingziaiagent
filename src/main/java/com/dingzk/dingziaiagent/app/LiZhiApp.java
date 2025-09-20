@@ -14,6 +14,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
@@ -116,9 +117,28 @@ public class LiZhiApp {
     public String doChatWithTools(String message, String conversationId) {
         ChatResponse response = chatClient.prompt()
                 .user(message)
-                .advisors(new LiZhiLoggerAdvisor())
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .toolCallbacks(registeredTools)
+                .call()
+                .chatResponse();
+
+        return response.getResult().getOutput().getText();
+    }
+
+    @Resource
+    private ToolCallbackProvider imageMcpTool;
+
+    /**
+     * MCP
+     * @param message 消息
+     * @param conversationId 对话 id
+     * @return 返回消息
+     */
+    public String doChatWithMcp(String message, String conversationId) {
+        ChatResponse response = chatClient.prompt()
+                .user(message)
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .toolCallbacks(imageMcpTool)
                 .call()
                 .chatResponse();
 

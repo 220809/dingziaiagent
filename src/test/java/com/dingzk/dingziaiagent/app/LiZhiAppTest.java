@@ -84,4 +84,12 @@ class LiZhiAppTest {
         String result = liZhiApp.doChatWithTools(message, conversationId);
         Assertions.assertNotNull(result);
     }
+
+    @Test
+    void doChatWithMcp() {
+        String conversationId = UUID.randomUUID().toString();
+        String message = "Please help me search some nature pictures that make me feel comfortable";
+        String result = liZhiApp.doChatWithMcp(message, conversationId);
+        Assertions.assertNotNull(result);
+    }
 }

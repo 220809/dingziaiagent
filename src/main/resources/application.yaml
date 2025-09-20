@@ -17,16 +17,19 @@ spring:
 
 
   ai:
+    # AI LLM
     dashscope:
       api-key: your-api-key
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
           model: qwen-plus
+      # embedding model
       embedding:
         base-url: https://dashscope.aliyuncs.com
         options:
           model: text-embedding-v1
+    # vector store
     vectorstore:
       pgvector:
         index-type: HNSW
@@ -34,6 +37,19 @@ spring:
         dimensions: 1536
         max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
         initialize-schema: true
+    # MCP
+    # stdio
+#    mcp:
+#      client:
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
+    # sse
+    mcp:
+      client:
+        sse:
+          connections:
+            server1:
+              url: http://localhost:9527
 server:
   port: 8100
   servlet:
@@ -70,3 +86,4 @@ mybatis-plus:
 # SearchAPI apiKey
 search-api:
   apiKey: your-api-key
+

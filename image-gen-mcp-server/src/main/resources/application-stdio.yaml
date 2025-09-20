@@ -1,0 +1,13 @@
+spring:
+  ai:
+    mcp:
+      server:
+        name: image-gen-mcp-server
+        version: 0.0.1
+        type: SYNC
+        # stdio
+        stdio: true
+  # stdio 关闭 web 支持
+  main:
+    web-application-type: none
+    banner-mode: off

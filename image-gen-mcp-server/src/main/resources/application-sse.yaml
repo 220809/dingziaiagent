@@ -1,0 +1,9 @@
+spring:
+  ai:
+    mcp:
+      server:
+        name: image-gen-mcp-server
+        version: 0.0.1
+        type: SYNC
+        # sse 关闭 stdio 模式
+        stdio: false

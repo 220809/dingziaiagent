@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: image-gen-mcp-server
+  profiles:
+    active: sse
+
+server:
+  port: 9527
+
+pexel:
+  api-key: pexel-api-key
