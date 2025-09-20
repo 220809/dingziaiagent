@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 
-@Configuration
+//@Configuration
 public class PgVectorStoreConfig {
 
     @Resource

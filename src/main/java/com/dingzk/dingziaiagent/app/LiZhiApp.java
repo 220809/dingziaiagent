@@ -13,6 +13,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,9 @@ public class LiZhiApp {
 
     @Resource
     private VectorStore pgVectorStore;
+
+    @Resource
+    private ToolCallback[] registeredTools;
 
     public LiZhiApp(ChatModel dashScopeChatModel, ChatMessageMapper chatMessageMapper) {
 
@@ -101,5 +105,23 @@ public class LiZhiApp {
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
         return content;
+    }
+
+    /**
+     * 使用工具调用
+     * @param message 用户消息
+     * @param conversationId 对话 id
+     * @return result
+     */
+    public String doChatWithTools(String message, String conversationId) {
+        ChatResponse response = chatClient.prompt()
+                .user(message)
+                .advisors(new LiZhiLoggerAdvisor())
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .toolCallbacks(registeredTools)
+                .call()
+                .chatResponse();
+
+        return response.getResult().getOutput().getText();
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-@Component
+//@Component   // 测试使用 SpringAi 的方式调用大模型
 public class SpringAiInvoke implements CommandLineRunner {
 
     @Resource
