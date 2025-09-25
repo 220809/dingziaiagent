@@ -39,7 +39,7 @@ public class LiZhiApp {
     private VectorStore pgVectorStore;
 
     @Resource
-    private ToolCallback[] registeredTools;
+    private List<ToolCallback> registeredTools;
 
     public LiZhiApp(ChatModel dashScopeChatModel, ChatMessageMapper chatMessageMapper) {
 
@@ -125,7 +125,7 @@ public class LiZhiApp {
         return response.getResult().getOutput().getText();
     }
 
-    @Resource
+//    @Resource
     private ToolCallbackProvider imageMcpTool;
 
     /**

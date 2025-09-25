@@ -44,12 +44,12 @@ spring:
 #        stdio:
 #          servers-configuration: classpath:mcp-servers.json
     # sse
-    mcp:
-      client:
-        sse:
-          connections:
-            server1:
-              url: http://localhost:9527
+#    mcp:
+#      client:
+#        sse:
+#          connections:
+#            server1:
+#              url: http://localhost:9527
 server:
   port: 8100
   servlet:

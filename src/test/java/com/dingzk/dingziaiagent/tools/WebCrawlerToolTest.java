@@ -8,7 +8,7 @@ class WebCrawlerToolTest {
     @Test
     void executeWebCrawl() {
         WebCrawlerTool tool = new WebCrawlerTool();
-        String url = "https://docs.spring.io/spring-ai/reference/getting-started.html";
+        String url = "https://www.visitbeijing.com.cn/article/4OFBGTXh6jd";
         String result = tool.executeWebCrawl(url);
 
         Assertions.assertNotNull(result);

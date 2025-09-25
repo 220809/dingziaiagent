@@ -28,7 +28,7 @@ public class FileOperationTool {
         File dir = new File(FileConstants.FILE_BASE_DIR);
 
         try {
-            FileWriter fileWriter = FileWriter.create(new File(filePath), StandardCharsets.UTF_8);
+            FileWriter fileWriter = FileWriter.create(new File(dir, filePath), StandardCharsets.UTF_8);
             FileUtil.mkdir(dir);
             fileWriter.write(content);
             return "Write content to file success!";
