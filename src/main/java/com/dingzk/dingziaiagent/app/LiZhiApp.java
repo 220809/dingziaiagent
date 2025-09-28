@@ -17,6 +17,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -35,8 +36,8 @@ public class LiZhiApp {
     @Resource
     private Advisor ragCloudDocumentAdvisor;
 
-    @Resource
-    private VectorStore pgVectorStore;
+    @Resource(name = "appVectorStore")
+    private VectorStore vectorStore;
 
     @Resource
     private List<ToolCallback> registeredTools;
@@ -49,7 +50,7 @@ public class LiZhiApp {
 
         ChatMemory mySqlChatMemory = MessageWindowChatMemory.builder()
                 .chatMemoryRepository(mySqlChatMemoryRepository)
-                .maxMessages(3)
+                .maxMessages(10)
                 .build();
         // 想要实现 MySQL 持久化对话记忆，添加此 Advisor
         chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(mySqlChatMemory).build();
@@ -100,12 +101,28 @@ public class LiZhiApp {
         ChatResponse chatResponse = chatClient.prompt()
                 .user(message)
 //                .advisors(ragCloudDocumentAdvisor)   // 云知识库文档检索
-                .advisors(new QuestionAnswerAdvisor(pgVectorStore))   // 向量数据库文档检索
+//                .advisors(new QuestionAnswerAdvisor(vectorStore))   // 向量数据库文档检索，需更换 PgSQL配置
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
         return content;
+    }
+
+    /**
+     * 知识库问答 SSE 流式输出
+     * @param message 用户消息
+     * @param conversationId 对话Id
+     * @return 大模型返回内容
+     */
+    public Flux<String> doRagChatStream(String message, String conversationId) {
+        return chatClient.prompt()
+                .user(message)
+                .advisors(ragCloudDocumentAdvisor)   // 云知识库文档检索
+                .advisors(chatMemoryAdvisor)   // 记忆持久化
+                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .stream()
+                .content();
     }
 
     /**

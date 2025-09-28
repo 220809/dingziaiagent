@@ -1,5 +1,8 @@
 application-local.yaml
 tmp/
+node_modules/
+docs/
+example.http
 
 HELP.md
 target/

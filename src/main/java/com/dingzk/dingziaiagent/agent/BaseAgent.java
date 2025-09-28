@@ -9,9 +9,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Data
@@ -41,44 +44,84 @@ public abstract class BaseAgent {
 
     private int duplicateExecutionThreshold = 2;
 
+    protected SseEmitter sseEmitter;
+
     /**
      * 智能体执行循环
      */
-    public String run(String userPrompt) {
-        if (currentState != AgentState.IDLE) {
-            throw new RuntimeException(String.format("此状态{ %s }下无法启动智能体: ", currentState.description));
-        }
+    public SseEmitter run(String userPrompt) {
+        sseEmitter = new SseEmitter(300000L);  // 5 分钟超时时间
 
-        if (StrUtil.isBlankIfStr(userPrompt)) {
-            throw new RuntimeException("无用户输入");
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (currentState != AgentState.IDLE) {
+                    sseEmitter.send(String.format("此状态{ %s }下无法启动智能体: ", currentState.description));
+                    sseEmitter.complete();
+                    return;
+                }
 
-        currentState = AgentState.RUNNING;
-        messageList.add(new UserMessage(userPrompt));
-
-        List<String> results = new ArrayList<>();
-        try {
-            while (currentStep < maxAttemptStep && currentState != AgentState.FINISHED) {
-                ++currentStep;
-                log.info("执行步骤: {}/{}", currentStep, maxAttemptStep);
-                String stepResult = step();
-
-                results.add(String.format("步骤 %d: %s", currentStep, stepResult));
-            }
-            if (currentStep >= maxAttemptStep) {
-                currentState = AgentState.IDLE;
-                currentStep = 0;
-                results.add(String.format("执行结束: 执行步骤超出最大值: %d", maxAttemptStep));
+                if (StrUtil.isBlankIfStr(userPrompt)) {
+                    sseEmitter.send("无用户输入");
+                    sseEmitter.complete();
+                    return;
+                }
+            } catch (IOException e) {
+                log.error("SSE output error: ", e);
+                sseEmitter.completeWithError(e);
             }
 
-            return results.isEmpty() ? "未执行任何步骤" : String.join("\n", results);
-        } catch (Exception e) {
-            log.error("执行出错: ", e);
-            currentState = AgentState.ERROR;
-            return "执行出错: " + e.getMessage();
-        } finally {
-            cleanup();
-        }
+            currentState = AgentState.RUNNING;
+            messageList.add(new UserMessage(userPrompt));
+
+            List<String> results = new ArrayList<>();
+            try {
+                while (currentStep < maxAttemptStep && currentState != AgentState.FINISHED) {
+                    ++currentStep;
+                    log.info("执行步骤: {}/{}", currentStep, maxAttemptStep);
+                    String stepResult = String.format("步骤 %d: %s", currentStep, step());
+
+//                    sseEmitter.send(stepResult);
+                    if (currentState == AgentState.FINISHED) {
+                        sseEmitter.complete();
+                    }
+
+                    if (isStuck()) {
+                        handleStuck();
+                    }
+                    results.add(stepResult);
+                }
+                if (currentStep >= maxAttemptStep) {
+                    currentState = AgentState.IDLE;
+                    currentStep = 0;
+                    sseEmitter.send(String.format("执行结束: 执行步骤超出最大值: %d", maxAttemptStep));
+                    sseEmitter.complete();
+                    results.add(String.format("执行结束: 执行步骤超出最大值: %d", maxAttemptStep));
+                }
+            } catch (Exception e) {
+                log.error("执行出错: ", e);
+                sseEmitter.completeWithError(e);
+                currentState = AgentState.ERROR;
+            } finally {
+                cleanup();
+            }
+        });
+
+        sseEmitter.onTimeout(() -> {
+            log.warn("SSE connection timeout");
+            sseEmitter.complete();
+            this.cleanup();
+        });
+
+        sseEmitter.onCompletion(() -> {
+            if (currentState == AgentState.RUNNING) {
+                currentState = AgentState.FINISHED;
+            }
+            log.info("SSE output successfully");
+            sseEmitter.complete();
+            this.cleanup();
+        });
+
+        return sseEmitter;
     }
 
     private boolean isStuck() {

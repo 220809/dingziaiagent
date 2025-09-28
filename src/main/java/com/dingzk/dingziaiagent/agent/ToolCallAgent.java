@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.dingzk.dingziaiagent.agent.state.AgentState;
+import com.dingzk.dingziaiagent.rag.LizhiToolRegistry;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,13 @@ public class ToolCallAgent extends ReActAgent{
             String result = assistantMessage.getText();
             List<AssistantMessage.ToolCall> toolCalls = assistantMessage.getToolCalls();
             log.info("{} 的思考结果: {}", getName(), result);
+            if (StrUtil.isNotBlank(result)) {
+                sseEmitter.send(String.format("%s 给出的结果: %s", getName(), result));
+            }
             log.info("{} 选择了 {} 个工具调用", getName(), toolCalls.size());
+            for (AssistantMessage.ToolCall toolCall : toolCalls) {
+                sseEmitter.send(LizhiToolRegistry.getToolPrompt(toolCall));
+            }
 
             if (toolCalls.isEmpty()) {
                 // 无工具调用，记录 AI 返回消息
