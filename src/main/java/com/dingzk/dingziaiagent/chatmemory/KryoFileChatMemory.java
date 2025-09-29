@@ -8,13 +8,16 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 文件对话记忆持久化
@@ -25,25 +28,33 @@ public class KryoFileChatMemory implements ChatMemory {
 
     private static final Kryo kryo = new Kryo();
 
+    private static final int DEFAULT_MAX_MESSAGES = 20;
+
+    private int maxMessages;
+
     static {
         kryo.setRegistrationRequired(false);
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
         kryo.register(AssistantMessage.class);
     }
 
-    public KryoFileChatMemory(String filePath) {
+    public KryoFileChatMemory(String filePath, int maxMessages) {
         this.BASE_DIR = new File(filePath);
         if (!BASE_DIR.exists())
         {
             BASE_DIR.mkdirs();
         }
-
+        this.maxMessages = maxMessages;
     }
+
+    public KryoFileChatMemory(String filePath) {
+        this(filePath, DEFAULT_MAX_MESSAGES);
+    }
+
     @Override
     public void add(String conversationId, List<Message> messages) {
         List<Message> memoryMessages = getOrCreateMemoryFile(conversationId);
-        memoryMessages.addAll(messages);
-        storeMemoryFile(conversationId, memoryMessages);
+        storeMemoryFile(conversationId, process(memoryMessages, messages));
     }
 
     @Override
@@ -101,5 +112,45 @@ public class KryoFileChatMemory implements ChatMemory {
         } catch (IOException e) {
             log.error("JsonFileChatMemory.storeMemoryFile error, message: {}", e.getCause().getMessage());
         }
+    }
+
+    /**
+     * 维护对话记忆持久化条数
+     * @param memoryMessages 保存的对话消息
+     * @param newMessages 新添加对话消息
+     * @return 处理后的消息
+     */
+    private List<Message> process(List<Message> memoryMessages, List<Message> newMessages) {
+        List<Message> processedMessages = new ArrayList<>();
+
+        Set<Message> memoryMessagesSet = new HashSet<>(memoryMessages);
+        boolean hasNewSystemMessage = newMessages.stream()
+                .filter(SystemMessage.class::isInstance)
+                .anyMatch(message -> !memoryMessagesSet.contains(message));
+
+        memoryMessages.stream()
+                .filter(message -> !(hasNewSystemMessage && message instanceof SystemMessage))
+                .forEach(processedMessages::add);
+
+        processedMessages.addAll(newMessages);
+
+        if (processedMessages.size() <= this.maxMessages) {
+            return processedMessages;
+        }
+
+        int messagesToRemove = processedMessages.size() - this.maxMessages;
+
+        List<Message> trimmedMessages = new ArrayList<>();
+        int removed = 0;
+        for (Message message : processedMessages) {
+            if (message instanceof SystemMessage || removed >= messagesToRemove) {
+                trimmedMessages.add(message);
+            }
+            else {
+                removed++;
+            }
+        }
+
+        return trimmedMessages;
     }
 }

@@ -142,7 +142,27 @@ const sendMessage = async () => {
           return
         }
         
-        // 检查是否是新的段落或重要内容（以句号、问号、感叹号结尾且长度较长）
+        // 检查是否是情感咨询的结束（基于内容特征）
+        if (data.includes('希望我的回答对您有帮助') || 
+            data.includes('如果您还有其他问题') || 
+            data.includes('祝您心情愉快') ||
+            data.includes('感谢您的信任')) {
+          console.log('检测到情感咨询结束，延迟关闭连接')
+          isConversationCompleted = true // 标记对话已完成
+          // 清除之前的定时器
+          if (closeTimeoutId) {
+            clearTimeout(closeTimeoutId)
+          }
+          // 延迟3秒关闭，确保后端完成所有操作
+          closeTimeoutId = setTimeout(() => {
+            if (isLoading.value) {
+              console.log('情感咨询结束，关闭连接')
+              handleConnectionClose()
+            }
+          }, 3000)
+        }
+        
+        // 处理正常数据
         const lastMessage = messages.value[messages.value.length - 1]
         
         if (lastMessage && lastMessage.type === 'assistant' && !lastMessage.isTyping) {
@@ -167,49 +187,6 @@ const sendMessage = async () => {
         }
         
         scrollToBottom()
-        
-        // 检查是否是明确的结束标记
-        if (data === '[DONE]' || data === 'data: [DONE]' || data.trim() === '') {
-          console.log('收到明确的结束标记，关闭连接')
-          handleConnectionClose()
-          return
-        }
-        
-        // 检查是否包含结束标记
-        if (data.includes('[DONE]') || data.includes('data: [DONE]')) {
-          console.log('数据包含结束标记，关闭连接')
-          // 移除结束标记后显示内容
-          const cleanData = data.replace(/\[DONE\]|data: \[DONE\]/g, '').trim()
-          if (cleanData) {
-            messages.value.push({
-              id: Date.now(),
-              type: 'assistant',
-              content: cleanData
-            })
-          }
-          handleConnectionClose()
-          return
-        }
-        
-        // 检查是否是情感咨询的结束（基于内容特征）
-        if (data.includes('希望我的回答对您有帮助') || 
-            data.includes('如果您还有其他问题') || 
-            data.includes('祝您心情愉快') ||
-            data.includes('感谢您的信任')) {
-          console.log('检测到情感咨询结束，延迟关闭连接')
-          isConversationCompleted = true // 标记对话已完成
-          // 清除之前的定时器
-          if (closeTimeoutId) {
-            clearTimeout(closeTimeoutId)
-          }
-          // 延迟5秒关闭，确保后端完成所有操作
-          closeTimeoutId = setTimeout(() => {
-            if (isLoading.value) {
-              console.log('情感咨询结束，关闭连接')
-              handleConnectionClose()
-            }
-          }, 5000)
-        }
       },
       (error) => {
         console.error('SSE错误:', error)
@@ -244,14 +221,14 @@ const sendMessage = async () => {
     const dataMonitorId = setInterval(() => {
       if (isLoading.value && eventSource && !isConversationCompleted) {
         const timeSinceLastData = Date.now() - lastDataTime
-        // 如果超过15秒没有收到数据，且连接仍然活跃，可能是对话完成
-        if (timeSinceLastData > 15000) {
+        // 如果超过10秒没有收到数据，且连接仍然活跃，可能是对话完成
+        if (timeSinceLastData > 10000) {
           console.log('长时间未收到数据，可能对话已完成')
           clearInterval(dataMonitorId)
           handleConnectionClose()
         }
       }
-    }, 3000) // 每3秒检查一次
+    }, 2000) // 每2秒检查一次
     
     // 保存监控ID
     eventSource.dataMonitorId = dataMonitorId

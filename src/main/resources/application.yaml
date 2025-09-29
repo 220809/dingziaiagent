@@ -3,17 +3,24 @@ spring:
     name: dingzi-ai-agent
   profiles:
     active: local
+#  datasource:
+#    mysql:
+#      driver-class-name: com.mysql.cj.jdbc.Driver
+#      url:
+#      username:
+#      password:
+#    postgresql:
+#      driver-class-name: org.postgresql.Driver
+#      url:
+#      username:
+#      password:
+
+  # 添加此配置是为了通过 Mybatis 依赖的编译, 项目中暂不会用到此数据库连接
   datasource:
-    mysql:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url:
-      username:
-      password:
-    postgresql:
-      driver-class-name: org.postgresql.Driver
-      url:
-      username:
-      password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql:///db
+    username: xxxx
+    password: xxxx
 
 
   ai:
@@ -23,7 +30,7 @@ spring:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
-          model: qwen-plus
+          model: qwen3-max
       # embedding model
       embedding:
         base-url: https://dashscope.aliyuncs.com

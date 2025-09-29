@@ -74,7 +74,7 @@ export const createSSEConnection = (url, onMessage, onError, onOpen) => {
     }
     
     // 如果错误次数过多，强制关闭连接
-    if (errorCount > 5) {
+    if (errorCount > 3) {
       console.log(`SSE连接 #${connectionId} 错误次数过多，强制关闭`)
       eventSource.close()
       onError(error)

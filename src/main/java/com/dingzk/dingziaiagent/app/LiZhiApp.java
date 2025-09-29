@@ -1,7 +1,7 @@
 package com.dingzk.dingziaiagent.app;
 
 import com.dingzk.dingziaiagent.advisor.LiZhiLoggerAdvisor;
-import com.dingzk.dingziaiagent.chatmemory.MySqlChatMemoryRepository;
+import com.dingzk.dingziaiagent.chatmemory.KryoFileChatMemory;
 import com.dingzk.dingziaiagent.mapper.ChatMessageMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,6 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
@@ -20,6 +19,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+
+import static com.dingzk.dingziaiagent.constants.FileConstants.CHAT_MEMORY_FILE_DIR;
 
 @Component
 @Slf4j
@@ -44,16 +45,22 @@ public class LiZhiApp {
 
     public LiZhiApp(ChatModel dashScopeChatModel, ChatMessageMapper chatMessageMapper) {
 
-        MySqlChatMemoryRepository mySqlChatMemoryRepository = MySqlChatMemoryRepository.builder()
-                .chatMessageMapper(chatMessageMapper)
-                .build();
+        // MySQL 数据库对话记忆持久化
+//        MySqlChatMemoryRepository mySqlChatMemoryRepository = MySqlChatMemoryRepository.builder()
+//                .chatMessageMapper(chatMessageMapper)
+//                .build();
 
-        ChatMemory mySqlChatMemory = MessageWindowChatMemory.builder()
-                .chatMemoryRepository(mySqlChatMemoryRepository)
-                .maxMessages(10)
-                .build();
-        // 想要实现 MySQL 持久化对话记忆，添加此 Advisor
-        chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(mySqlChatMemory).build();
+
+//        ChatMemory mySqlChatMemory = MessageWindowChatMemory.builder()
+//                .chatMemoryRepository(mySqlChatMemoryRepository)
+//                .maxMessages(10)
+//                .build();
+
+        // Kryo 本地文件持久化
+        ChatMemory kryoLocalChatMemory =
+                new KryoFileChatMemory(CHAT_MEMORY_FILE_DIR, 10);
+        // 想要实现持久化对话记忆，添加此 Advisor, 可选择文件/数据库持久化
+        chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(kryoLocalChatMemory).build();
 
         // 使用 MySQL 持久化对话记忆
         chatClient = ChatClient.builder(dashScopeChatModel)
@@ -118,7 +125,7 @@ public class LiZhiApp {
     public Flux<String> doRagChatStream(String message, String conversationId) {
         return chatClient.prompt()
                 .user(message)
-                .advisors(ragCloudDocumentAdvisor)   // 云知识库文档检索
+                .advisors(new QuestionAnswerAdvisor(vectorStore))   // 本地知识库文档
                 .advisors(chatMemoryAdvisor)   // 记忆持久化
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()

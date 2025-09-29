@@ -1,27 +1,23 @@
 package com.dingzk.dingziaiagent.config;
 
-import com.baomidou.mybatisplus.core.MybatisSqlSessionFactoryBuilder;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
 
-@Configuration
 @Getter
 @Setter
-@MapperScan(basePackages = "com.dingzk.dingziaiagent.mapper",sqlSessionFactoryRef = "mysqlSqlSessionFactory")
-@ConfigurationProperties(prefix = "spring.datasource.mysql")
+//@Configuration
+//@MapperScan(basePackages = "com.dingzk.dingziaiagent.mapper",sqlSessionFactoryRef = "mysqlSqlSessionFactory")
+//@ConfigurationProperties(prefix = "spring.datasource.mysql")
 public class MysqlDataSourceConfig {
 
     private String driverClassName;

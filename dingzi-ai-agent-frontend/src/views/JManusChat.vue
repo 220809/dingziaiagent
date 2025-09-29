@@ -138,47 +138,12 @@ const sendMessage = async () => {
           return
         }
         
-        // 智能分割AI智能体的输出内容
-        const shouldCreateNewMessage = (data) => {
-          // 1. 新步骤开始
-          if (data.match(/^步骤\d+[:：]/)) return true
-          
-          // 2. 工具调用相关
-          if (data.includes('工具:') || data.includes('调用成功') || data.includes('调用结果')) return true
-          
-          // 3. 任务完成相关
-          if (data.includes('执行完成') || data.includes('任务完成') || data.includes('总结')) return true
-          
-          // 4. 检查是否是新的段落（以句号、问号、感叹号结尾且长度较长）
-          if (data.match(/[。！？.!?]$/) && data.length > 30) return true
-          
-          // 5. 检查是否是JSON数据（工具调用结果通常是JSON格式）
-          if (data.trim().startsWith('{') || data.trim().startsWith('[')) return true
-          
-          return false
-        }
-        
-        if (shouldCreateNewMessage(data)) {
-          // 创建新的消息气泡
-          messages.value.push({
-            id: Date.now(),
-            type: 'assistant',
-            content: data
-          })
-        } else {
-          // 添加到最后一个消息或创建新消息
-          const lastMessage = messages.value[messages.value.length - 1]
-          
-          if (lastMessage && lastMessage.type === 'assistant' && !lastMessage.isTyping) {
-            lastMessage.content += data
-          } else {
-            messages.value.push({
-              id: Date.now(),
-              type: 'assistant',
-              content: data
-            })
-          }
-        }
+        // 每次SseEmitter.send的输出都另起新行
+        messages.value.push({
+          id: Date.now(),
+          type: 'assistant',
+          content: data
+        })
         
         scrollToBottom()
         
